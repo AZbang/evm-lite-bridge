@@ -1,8 +1,8 @@
 import Web3 from 'web3'
 import BN from 'bn.js'
 
-import apiContract from './LiteBridge'
 import ERC20 from './ERC20'
+import apiContract from './LiteBridge'
 import { RequestArguments } from '@metamask/providers/dist/BaseProvider'
 
 const BRIDGE = Web3.utils.toChecksumAddress('0x8667e2d2550fd86728d25022ca11dbed68005fc9')
@@ -21,12 +21,13 @@ const getOptions = async () => {
 }
 
 enum PrecessStatus {
-  ChooseAsset,
-  NeedApprove,
-  CreateRequest,
-  Processing,
-  Refund,
-  Success,
+  ChooseAsset = 'ChooseAsset',
+  NeedApprove = 'NeedApprove',
+  CreateRequest = 'CreateRequest',
+  Processing = 'Processing',
+  Refund = 'Refund',
+  Success = 'Success',
+  Failed = 'Failed',
 }
 
 const extensionCall = (action: string, payload?: Record<string, any>) => {
@@ -53,7 +54,7 @@ const extensionWait = (action: string) => {
   })
 }
 
-export const bridgePolygon = async (pay: BN) => {
+const bridgePolygon = async (pay: BN) => {
   const metamask = new Web3(window.ethereum as any)
   const contract = new metamask.eth.Contract(apiContract as any, BRIDGE)
   const usdtContract = new metamask.eth.Contract(ERC20 as any, USDT)
@@ -112,7 +113,7 @@ export const bridgePolygon = async (pay: BN) => {
       })
 
       if (Date.now() - startDate > 1000 * 60) return reject()
-      await wait(3000)
+      await wait(1000)
       checkBalance()
     }
 
@@ -124,8 +125,8 @@ export const bridgePolygon = async (pay: BN) => {
   })
 
   try {
-    extensionCall('process', { status: PrecessStatus.Success })
     await awaitIncome
+    extensionCall('process', { status: PrecessStatus.Success })
   } catch {
     extensionCall('process', { status: PrecessStatus.Refund })
     const data = contract.methods.disputeRequest().encodeABI()
@@ -153,17 +154,15 @@ const interceptTransferCall = async (args: RequestArguments) => {
     const options = await getOptions()
     const usdtUsdRate = options.find((t) => t.token === 'USDT')?.usd_rate ?? 1
     const otkUsdRate = options.find((t) => t.token === 'OTK')?.usd_rate ?? 1
-    const usdt = Math.floor(
-      (+pay.abs().toString(10) / Math.pow(10, 18)) * otkUsdRate * usdtUsdRate * 1000000,
-    )
+    const usdt = (+pay.abs().toString(10) / Math.pow(10, 18)) * otkUsdRate * usdtUsdRate
 
     extensionCall('process', {
       status: PrecessStatus.ChooseAsset,
-      payload: usdt,
+      payload: usdt.toFixed(2),
     })
 
     await extensionWait('request_bridge')
-    await bridgePolygon(pay)
+    await bridgePolygon(new BN(Math.floor(usdt * 1000000).toString()))
     await window.ethereum?.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: '0x' + (66).toString(16) }],
@@ -189,7 +188,7 @@ const intercepGetBalance = async () => {
   return balance
 }
 
-export const initializeLiteBridge = async () => {
+const initializeLiteBridge = async () => {
   if (window.ethereum == null) return
 
   const eth_request = window.ethereum.request.bind(window.ethereum)
@@ -206,6 +205,7 @@ export const initializeLiteBridge = async () => {
       try {
         await interceptTransferCall(args)
       } catch (e) {
+        extensionCall('process', { status: PrecessStatus.Failed })
         console.error('[LiteBridgePage] interceptTransferCall error', e)
       }
     }

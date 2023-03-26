@@ -14,19 +14,20 @@ export const GlobalStyles = createGlobalStyle`
 
 export const Container = styled.div`
   background: #ffffff;
-  box-shadow: rgb(48 60 73 / 14%) 0px 1px 20px;
+  box-shadow: rgb(48 60 73 / 30%) 0px 1px 20px;
   border-radius: 8px 8px 0 0;
   width: 390px;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 12px;
-  isolation: isolate;
+  padding: 24px;
+  box-sizing: border-box;
+  padding-bottom: 48px;
 
   position: fixed;
   bottom: 0;
-  right: 48px;
+  right: 24px;
 `
 
 export const Title = styled.h2`
@@ -64,6 +65,8 @@ export const Button = styled.button`
   background: #000000;
   border-radius: 40px;
   border: none;
+
+  margin-top: 24px;
 
   font-family: 'HarmonyOS Sans';
   font-style: normal;
