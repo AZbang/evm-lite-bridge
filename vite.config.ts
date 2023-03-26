@@ -5,6 +5,19 @@ import nodePolyfills from 'rollup-plugin-polyfill-node'
 
 //@ts-ignore
 import manifest from './src/manifest'
+// import { dependencies } from './package.json'
+
+// // Packages we want in the vendor aka the deps needed in the entire app.
+// const globalVendorPackages = ['react', 'react-dom', 'styled-components']
+
+// function renderChunks(deps: Record<string, string>) {
+//   let chunks = {}
+//   Object.keys(deps).forEach((key) => {
+//     if (globalVendorPackages.includes(key)) return
+//     chunks[key] = [key]
+//   })
+//   return chunks
+// }
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -26,7 +39,6 @@ export default defineConfig(({ mode }) => {
         },
         output: {
           entryFileNames: 'web.js',
-          chunkFileNames: 'assets/chunk-[hash].js',
         },
       },
     },

@@ -23,7 +23,7 @@ export default defineManifest({
   content_scripts: [
     {
       matches: ['http://*/*', 'https://*/*'],
-      js: ['src/content/index.ts'],
+      js: ['src/content/index.tsx'],
       all_frames: true,
     },
   ],
